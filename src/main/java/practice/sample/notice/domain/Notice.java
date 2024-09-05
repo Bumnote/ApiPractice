@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class Notice {
 
     // ID, 제목, 내용, 등록일
@@ -22,8 +23,17 @@ public class Notice {
     @Column
     private String content;
 
-    @Column
+    @Column(name = "reg_date")
     private LocalDateTime regDate;
+
+    @Column(name = "update_date")
+    private LocalDateTime updateDate;
+
+    @Column
+    private int hits; // 조회 수
+
+    @Column
+    private int likes; // 좋아요 수
 
     // 커스텀 생성자 구현
     public Notice(String title, String content, LocalDateTime now) {
