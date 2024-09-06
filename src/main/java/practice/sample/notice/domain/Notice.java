@@ -35,6 +35,12 @@ public class Notice {
     @Column
     private int likes; // 좋아요 수
 
+    @Column
+    private boolean deleted;
+
+    @Column(name = "delete_date")
+    private LocalDateTime deleteDate;
+
     // 커스텀 생성자 구현
     public Notice(String title, String content, LocalDateTime now) {
         this.title = title;

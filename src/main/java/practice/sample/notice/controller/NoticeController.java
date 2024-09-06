@@ -5,7 +5,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import practice.sample.notice.domain.Notice;
+import practice.sample.notice.domain.NoticeDeleteInput;
 import practice.sample.notice.domain.NoticeInput;
+import practice.sample.notice.exception.AlreadyDeletedException;
 import practice.sample.notice.exception.NoticeNotFoundException;
 import practice.sample.notice.repository.NoticeRepository;
 
@@ -32,6 +34,8 @@ public class NoticeController {
                 .regDate(LocalDateTime.now())
                 .hits(0)
                 .likes(0)
+                .deleted(false)
+                .deleteDate(LocalDateTime.now())
                 .build();
 
         noticeRepository.save(notice);
@@ -93,6 +97,69 @@ public class NoticeController {
 
         notice.setHits(notice.getHits() + 1);
         noticeRepository.save(notice);
+    }
+
+
+    // 21. 공지사항의 글을 삭제하기 위한 API 구현
+    @DeleteMapping("/api/notice/{id}")
+    public void noticeDelete(@PathVariable Long id) {
+        Notice notice = noticeRepository.findById(id).orElseThrow(() -> new NoticeNotFoundException("공지사항의 글이 존재하지 않습니다."));
+
+        noticeRepository.delete(notice);
+    }
+
+    // 22. 공지사항의 글을 삭제하기 위한 API 구현 + 400에러 및 "내용이 존재하지 않습니다." 메시지 반환
+    @DeleteMapping("/api/notice/p/{id}")
+    public void noticeDelete1(@PathVariable Long id) {
+        Notice notice = noticeRepository.findById(id).orElseThrow(() -> new NoticeNotFoundException("내용이 존재하지 않습니다."));
+
+        noticeRepository.delete(notice);
+    }
+
+
+    // Error Handler
+    @ExceptionHandler(AlreadyDeletedException.class)
+    public ResponseEntity<String> handlerAlreadyDeletedException(AlreadyDeletedException exception) {
+        return new ResponseEntity<>(exception.getMessage(), HttpStatus.OK);
+    }
+
+    // 23. 공지사항의 글을 삭제하기 위한 API 구현 + 글이 이미 삭제된 경우 -> 200 "이미 삭제된 글입니다." 메시지 반환
+    @DeleteMapping("/api/notice/pp/{id}")
+    public void deleteNotice(@PathVariable Long id) {
+        Notice notice = noticeRepository
+                .findById(id)
+                .orElseThrow(() -> new NoticeNotFoundException("공지사항의 글이 존재하지 않습니다."));
+
+        if (notice.isDeleted()) {
+            throw new AlreadyDeletedException("이미 삭제된 공지사항의 글입니다.");
+        }
+
+        notice.setDeleted(true);
+        notice.setDeleteDate(LocalDateTime.now());
+
+        noticeRepository.save(notice);
+    }
+
+    // 24. 공지사항의 글을 삭제하기 위한 API 구현 -> 여러 개의 글을 동시에 삭제
+    @DeleteMapping("/api/delete")
+    public void deleteNoticeList(@RequestBody NoticeDeleteInput noticeDeleteInput) {
+
+        List<Notice> noticeList = noticeRepository
+                .findByIdIn(noticeDeleteInput.getIdList())
+                .orElseThrow(() -> new NoticeNotFoundException("공지사항의 글이 존재하지 않습니다."));
+
+        noticeList.stream().forEach(e -> {
+            e.setDeleted(true);
+            e.setDeleteDate(LocalDateTime.now());
+        });
+
+        noticeRepository.saveAll(noticeList);
+    }
+
+    // 25. 공지사항의 모든 글을 삭제하는 API 구현
+    @DeleteMapping("/api/delete/all")
+    public void deleteAll() {
+        noticeRepository.deleteAll(); // 너무 간단하다.
     }
 
 }
